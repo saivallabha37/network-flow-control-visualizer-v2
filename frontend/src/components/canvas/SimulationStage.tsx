@@ -8,7 +8,7 @@ import {
   deriveReceiverBufferedSeqs,
   SlotState,
 } from '../../utils/window-visuals';
-import { Server, Inbox, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { Server, Inbox, CheckCircle2, XCircle } from 'lucide-react';
 
 interface InFlightBadgeProps {
   pkt: InFlightPacket;
@@ -21,45 +21,49 @@ const InFlightBadge: React.FC<InFlightBadgeProps> = ({ pkt, onDeliver, onDrop })
   const isDelayed = pkt.status === 'DELAYED';
   const [hovered, setHovered] = useState(false);
 
-  // Animate from left-side to right-side based on dispatch vs scheduled times
-  // We animate purely via CSS — position anchored at center of lane, drifting right/left
-  const translateX = isData ? '45%' : '-45%';
+  // Animate smoothly between Host A and Host B
+  const translateX = isData ? '35%' : '-35%';
 
   return (
     <div
       className="absolute top-1/2 left-1/2 -translate-y-1/2"
       style={{
         transform: `translateY(-50%) translateX(${translateX})`,
-        transition: 'transform 0.4s cubic-bezier(.4,0,.2,1)',
-        zIndex: 10,
+        transition: 'transform 0.5s cubic-bezier(.4,0,.2,1)',
+        zIndex: 20,
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div
-        className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border shadow-lg cursor-pointer select-none transition-all ${
+        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold shadow-2xl cursor-pointer select-none transition-all ${
           isData
-            ? 'bg-indigo-950/90 border-indigo-500/60 text-indigo-200 hover:border-indigo-400 hover:shadow-indigo-500/30'
-            : 'bg-cyan-950/90 border-cyan-500/60 text-cyan-200 hover:border-cyan-400 hover:shadow-cyan-500/30'
-        } ${isDelayed ? 'ring-1 ring-amber-500/60' : ''}`}
-        style={{ backdropFilter: 'blur(4px)' }}
+            ? 'bg-[#0284c7] border-[#38bdf8] text-white shadow-sky-500/40 hover:scale-105'
+            : 'bg-[#ea580c] border-[#f97316] text-white shadow-orange-500/40 hover:scale-105'
+        } ${isDelayed ? 'ring-2 ring-amber-400' : ''}`}
+        style={{
+          boxShadow: isData
+            ? '0 8px 24px rgba(2, 132, 199, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4)'
+            : '0 8px 24px rgba(234, 88, 12, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
+        }}
       >
-        <span className="font-mono text-[11px] font-bold">
+        <span className="font-mono text-xs">
           {isData ? `DATA #${pkt.frame.seqNum}` : `ACK #${pkt.frame.ackNum ?? 0}`}
         </span>
+
         {isDelayed && (
-          <span className="text-[9px] font-mono px-1 py-0 rounded bg-amber-600/30 text-amber-300 border border-amber-500/40">
-            +delay
+          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-black/40 text-amber-200 border border-amber-300/40">
+            +DELAY
           </span>
         )}
 
-        {/* Hover action popup */}
+        {/* Action tooltip on hover */}
         {hovered && (
-          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 flex gap-1 z-20">
+          <div className="absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-30 bg-[#0a0f1d] p-1 rounded-xl border border-white/20 shadow-2xl">
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDeliver(pkt.id); }}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-700 hover:bg-emerald-600 text-white text-[10px] font-bold shadow-lg border border-emerald-500 cursor-pointer transition-all whitespace-nowrap"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold shadow-md cursor-pointer transition-all whitespace-nowrap"
             >
               <CheckCircle2 className="w-3 h-3" />
               Deliver
@@ -67,10 +71,10 @@ const InFlightBadge: React.FC<InFlightBadgeProps> = ({ pkt, onDeliver, onDrop })
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDrop(pkt.id); }}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-rose-700 hover:bg-rose-600 text-white text-[10px] font-bold shadow-lg border border-rose-500 cursor-pointer transition-all whitespace-nowrap"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold shadow-md cursor-pointer transition-all whitespace-nowrap"
             >
               <XCircle className="w-3 h-3" />
-              Drop
+              Drop (Lost)
             </button>
           </div>
         )}
@@ -122,70 +126,70 @@ const WindowTrack: React.FC<WindowTrackProps> = ({
       const isBuf = bufferedSeqs?.has(seq);
 
       if (isExpected) return {
-        border: 'border-emerald-500',
-        bg: 'bg-emerald-500/20',
-        text: 'text-emerald-200',
-        badge: 'Rn',
-        badgeBg: 'bg-emerald-950 text-emerald-300 border-emerald-500/50',
+        border: 'border-emerald-400 ring-2 ring-emerald-500/40',
+        bg: 'bg-emerald-500/20 shadow-md shadow-emerald-500/20',
+        text: 'text-emerald-100 font-black',
+        badge: 'EXPECTED',
+        badgeBg: 'bg-emerald-600 text-white font-bold',
       };
       if (isBuf) return {
-        border: 'border-purple-500',
-        bg: 'bg-purple-500/20',
-        text: 'text-purple-200',
-        badge: 'BUF',
-        badgeBg: 'bg-purple-950 text-purple-300 border-purple-500/50',
+        border: 'border-[#8b5cf6] ring-2 ring-[#8b5cf6]/50',
+        bg: 'bg-[#8b5cf6]/30 shadow-md shadow-purple-500/30',
+        text: 'text-purple-100 font-black',
+        badge: 'BUFFERED',
+        badgeBg: 'bg-[#8b5cf6] text-white font-bold',
       };
       if (inWindow) return {
-        border: 'border-cyan-500/40',
-        bg: 'bg-cyan-500/10',
-        text: 'text-cyan-200',
-        badge: 'OK',
-        badgeBg: 'bg-cyan-950 text-cyan-400 border-cyan-500/40',
+        border: 'border-sky-500/40',
+        bg: 'bg-sky-500/10',
+        text: 'text-sky-200',
+        badge: 'WINDOW',
+        badgeBg: 'bg-sky-950 text-sky-400 border border-sky-500/30',
       };
       return {
-        border: 'border-slate-800',
-        bg: 'bg-slate-900/30',
+        border: 'border-white/10',
+        bg: 'bg-black/30',
         text: 'text-slate-600',
         badge: '—',
-        badgeBg: 'bg-slate-900 text-slate-600 border-slate-800',
+        badgeBg: 'bg-transparent text-slate-600',
       };
     }
 
     const slotState: SlotState = classifySenderSlot(seq, base, nextSeq, windowSize, seqSpace, ackedSeqs);
     switch (slotState) {
       case 'ACKED': return {
-        border: 'border-emerald-500/50',
-        bg: 'bg-emerald-500/10',
-        text: 'text-emerald-200',
-        badge: 'ACK',
-        badgeBg: 'bg-emerald-950 text-emerald-300 border-emerald-500/40',
+        border: 'border-emerald-500/60',
+        bg: 'bg-emerald-500/15',
+        text: 'text-emerald-200 font-bold',
+        badge: 'ACKED',
+        badgeBg: 'bg-emerald-950 text-emerald-300 border border-emerald-500/40',
       };
       case 'OUTSTANDING': return {
-        border: 'border-amber-500',
-        bg: 'bg-amber-500/15',
-        text: 'text-amber-200',
-        badge: 'FLY',
-        badgeBg: 'bg-amber-950 text-amber-300 border-amber-500/40',
+        border: 'border-[#ea580c] ring-2 ring-[#ea580c]/50',
+        bg: 'bg-[#ea580c]/25 shadow-md shadow-orange-500/30',
+        text: 'text-orange-100 font-black',
+        badge: 'IN-FLIGHT',
+        badgeBg: 'bg-[#ea580c] text-white font-bold',
       };
       case 'READY': return {
-        border: 'border-cyan-500/40',
-        bg: 'bg-cyan-500/10',
-        text: 'text-cyan-200',
-        badge: 'RDY',
-        badgeBg: 'bg-cyan-950 text-cyan-400 border-cyan-500/40',
+        border: 'border-[#0284c7] ring-1 ring-sky-400/40',
+        bg: 'bg-[#0284c7]/20',
+        text: 'text-sky-200 font-bold',
+        badge: 'READY',
+        badgeBg: 'bg-[#0284c7] text-white font-bold',
       };
       default: return {
-        border: 'border-slate-800/60',
-        bg: 'bg-slate-900/20',
+        border: 'border-white/5',
+        bg: 'bg-black/30',
         text: 'text-slate-600',
         badge: '—',
-        badgeBg: 'bg-slate-900 text-slate-600 border-slate-800',
+        badgeBg: 'bg-transparent text-slate-600',
       };
     }
   };
 
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1.5 w-full">
       {slots.map((seq) => {
         const style = getSlotStyle(seq);
         const { displayTag } = getDualSequenceDisplay(seq, displayBase, seqSpace);
@@ -196,21 +200,22 @@ const WindowTrack: React.FC<WindowTrackProps> = ({
         return (
           <div
             key={seq}
-            className={`flex-1 min-w-0 flex flex-col items-center justify-center rounded-lg border p-1 transition-all ${style.border} ${style.bg} ${style.text} relative`}
-            style={{ minHeight: 52 }}
+            className={`flex-1 min-w-0 flex flex-col items-center justify-between rounded-xl border p-1.5 transition-all ${style.border} ${style.bg} ${style.text} relative`}
+            style={{ minHeight: 62 }}
           >
-            {/* Pointer badge */}
+            {/* Pointer badge pinned above */}
             {(isBase || isNext || isRn) && (
-              <div className={`absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-bold font-mono px-1 py-0.5 rounded border whitespace-nowrap z-10 ${
-                isRn ? 'bg-emerald-950 text-emerald-300 border-emerald-500/50' :
-                isBase ? 'bg-indigo-950 text-indigo-300 border-indigo-500/50' :
-                'bg-cyan-950 text-cyan-300 border-cyan-500/50'
+              <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 text-[9px] font-black font-mono px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap z-10 ${
+                isRn ? 'bg-emerald-500 text-white shadow-emerald-500/50' :
+                isBase && isNext ? 'bg-amber-500 text-black shadow-amber-500/50' :
+                isBase ? 'bg-amber-500 text-black shadow-amber-500/50' :
+                'bg-sky-400 text-black shadow-sky-400/50'
               }`}>
-                {isRn ? 'Rn' : isBase && isNext ? 'Sf=Sn' : isBase ? 'Sf' : 'Sn'}
+                {isRn ? 'Rn' : isBase && isNext ? 'Sf=Sn' : isBase ? 'Sf (base)' : 'Sn (next)'}
               </div>
             )}
-            <span className="font-mono font-bold text-xs">{displayTag}</span>
-            <span className={`text-[8px] font-semibold mt-0.5 font-mono px-1 rounded border ${style.badgeBg}`}>
+            <span className="font-mono font-black text-sm mt-1">{displayTag}</span>
+            <span className={`text-[8px] font-bold uppercase tracking-wider font-mono px-1.5 py-0.5 rounded-md ${style.badgeBg}`}>
               {style.badge}
             </span>
           </div>
@@ -245,8 +250,11 @@ export const SimulationStage: React.FC<SimulationStageProps> = ({
 
   if (!engineState) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-950">
-        <span className="text-slate-500 text-sm">Initializing engine…</span>
+      <div className="flex-1 flex items-center justify-center bg-[#0a0f1d]">
+        <div className="text-slate-400 text-sm font-mono flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-sky-400 animate-ping" />
+          Initializing Simulation Canvas…
+        </div>
       </div>
     );
   }
@@ -266,73 +274,68 @@ export const SimulationStage: React.FC<SimulationStageProps> = ({
   const dataPackets = inFlightPackets.filter((p) => p.type === 'DATA');
   const ackPackets = inFlightPackets.filter((p) => p.type === 'ACK');
 
-  // Timer ring params
-  const radius = 20;
+  // Countdown timer dial calculation
+  const radius = 24;
   const circumference = 2 * Math.PI * radius;
   const timerStroke = circumference - timerInfo.progress * circumference;
-  const timerColor = timerInfo.isExpired ? '#f43f5e' : timerInfo.isWarning ? '#f59e0b' : '#06b6d4';
+  const timerColor = timerInfo.isExpired ? '#ef4444' : timerInfo.isWarning ? '#ea580c' : '#10b981';
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden relative">
-      {/* Subtle grid background */}
-      <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage: 'linear-gradient(#94a3b8 1px,transparent 1px),linear-gradient(90deg,#94a3b8 1px,transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      />
+    <div className="flex-1 flex flex-col bg-[#0a0f1d] bg-dot-grid overflow-hidden relative select-none">
+      {/* Central Workbench Stage */}
+      <div className="relative flex-1 flex flex-col p-5 gap-3.5 justify-between overflow-hidden">
 
-      <div className="relative flex-1 flex flex-col p-6 gap-4 overflow-hidden">
-        {/* ===== HOST A (SENDER) ===== */}
-        <div className="flex gap-4 items-start">
-          {/* Sender machine box */}
-          <div className="shrink-0 flex flex-col items-center gap-2">
-            <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-indigo-950 to-slate-900 border-2 border-indigo-500/50 shadow-lg shadow-indigo-900/40 flex flex-col items-center justify-center gap-1">
-              <Server className="w-7 h-7 text-indigo-400" />
-              <span className="text-[9px] font-bold text-indigo-300 uppercase tracking-wider">Host A</span>
-              <span className="text-[8px] text-indigo-500 font-mono">SENDER</span>
+        {/* ===== SENDER NODE (Host A, Left) with Sliding Window Track ===== */}
+        <div className="p-4 rounded-2xl bg-[#0d1424]/90 backdrop-blur-xl border border-white/10 shadow-xl flex flex-col sm:flex-row gap-5 items-center">
+          {/* Machine Terminal Box & Analog Countdown Timer */}
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0284c7]/20 via-[#0a0f1d] to-[#0284c7]/10 border-2 border-[#0284c7] shadow-lg shadow-sky-600/30 flex flex-col items-center justify-center gap-0.5">
+              <Server className="w-6 h-6 text-[#38bdf8]" />
+              <span className="text-[10px] font-black text-white uppercase tracking-wider">Host A</span>
+              <span className="text-[8px] text-sky-400 font-mono font-bold">TRANSMITTER</span>
             </div>
 
-            {/* Timer ring */}
+            {/* Analog Countdown Timer Dial */}
             <div className="relative flex flex-col items-center">
-              <svg width="52" height="52" className="-rotate-90">
-                <circle cx="26" cy="26" r={radius} stroke="#1e293b" strokeWidth="4" fill="none" />
+              <svg width="56" height="56" className="-rotate-90">
+                <circle cx="28" cy="28" r={radius} stroke="#1e293b" strokeWidth="4.5" fill="none" />
                 <circle
-                  cx="26" cy="26" r={radius}
+                  cx="28" cy="28" r={radius}
                   stroke={timerColor}
-                  strokeWidth="4"
+                  strokeWidth="4.5"
                   strokeDasharray={circumference}
                   strokeDashoffset={timerStroke}
                   strokeLinecap="round"
                   fill="none"
-                  className="transition-all duration-300"
+                  className="transition-all duration-200"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                {timerInfo.isExpired
-                  ? <span className="text-[9px] font-bold text-rose-400 animate-pulse">OUT</span>
-                  : <span className="text-[9px] font-bold text-slate-200">{timerInfo.percentage}%</span>
-                }
+                {timerInfo.isExpired ? (
+                  <span className="text-[10px] font-black text-red-400 animate-pulse">TIMEOUT</span>
+                ) : (
+                  <span className="text-[11px] font-mono font-bold text-white">{timerInfo.percentage}%</span>
+                )}
               </div>
-              <span className="text-[9px] text-slate-500 mt-0.5 font-mono">ARQ Timer</span>
+              <span className="text-[9px] text-slate-400 mt-0.5 font-mono font-bold">ARQ Timer</span>
             </div>
           </div>
 
-          {/* Sender window track */}
-          <div className="flex-1 flex flex-col gap-2 mt-2">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-[10px] uppercase tracking-widest text-indigo-400 font-semibold flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                Sender Window · [{base}…{(base + windowSize - 1) % seqSpace}] · N={windowSize}
+          {/* Horizontal Window Track (0...7) mounted above Host A */}
+          <div className="flex-1 min-w-0 w-full space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="font-bold text-sky-300 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                <span>Sender Window [{base} … {(base + windowSize - 1) % seqSpace}] (N = {windowSize})</span>
               </div>
-              <div className="flex items-center gap-3 text-[10px] font-mono">
-                <span className="text-slate-400">Sf=<strong className="text-amber-300">{base}</strong></span>
-                <span className="text-slate-400">Sn=<strong className="text-cyan-300">{nextSeq}</strong></span>
-                <span className="text-slate-400">M=<strong className="text-slate-300">{seqSpace}</strong></span>
+              <div className="font-mono text-xs flex items-center gap-3">
+                <span className="text-slate-400">Sf (base): <strong className="text-amber-400">{base}</strong></span>
+                <span className="text-slate-400">Sn (next): <strong className="text-sky-400">{nextSeq}</strong></span>
+                <span className="text-slate-500 font-semibold">M = {seqSpace}</span>
               </div>
             </div>
-            <div className="pt-4">
+
+            <div className="pt-3">
               <WindowTrack
                 protocol={protocol}
                 seqSpace={seqSpace}
@@ -348,28 +351,38 @@ export const SimulationStage: React.FC<SimulationStageProps> = ({
           </div>
         </div>
 
-        {/* ===== PHYSICAL CHANNEL ===== */}
-        <div ref={laneRef} className="flex-1 flex flex-col gap-2 justify-center">
-          {/* DATA lane: A → B */}
+        {/* ===== DUAL TRANSMISSION WIRES (Upper: DATA A➔B, Lower: ACK B➔A) ===== */}
+        <div ref={laneRef} className="flex-1 flex flex-col justify-center gap-3 my-1">
+          {/* Upper Glowing Wire: DATA Frames (A ➔ B) */}
           <div className="relative">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-              <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-semibold">
-                DATA frames · Host A <ArrowRight className="w-3 h-3 inline" /> Host B
+            <div className="flex items-center justify-between text-xs mb-1 px-1">
+              <span className="font-bold text-sky-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#0284c7]" />
+                DATA WIRE (Host A ➔ Host B)
               </span>
-              <span className="ml-auto text-[10px] font-mono text-slate-500">
-                {dataPackets.length > 0 ? `${dataPackets.length} in transit` : 'channel idle'}
+              <span className="text-[11px] font-mono text-slate-400">
+                {dataPackets.length > 0 ? (
+                  <strong className="text-sky-300">{dataPackets.length} DATA frames in flight</strong>
+                ) : (
+                  'Channel idle'
+                )}
               </span>
             </div>
-            <div className="relative h-14 rounded-xl bg-slate-900/80 border border-indigo-500/20 overflow-visible"
-              style={{ boxShadow: dataPackets.length > 0 ? '0 0 16px rgba(99,102,241,0.08)' : undefined }}
+
+            <div
+              className="relative h-16 rounded-2xl bg-[#0d1424]/80 backdrop-blur-md border border-sky-500/30 overflow-visible transition-all"
+              style={{
+                boxShadow: dataPackets.length > 0
+                  ? '0 0 24px rgba(2, 132, 199, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.1)',
+              }}
             >
-              {/* Animated wire glow */}
-              <div className="absolute inset-y-1/2 inset-x-4 h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+              {/* Glowing horizontal wire line */}
+              <div className="absolute inset-y-1/2 inset-x-4 h-0.5 bg-gradient-to-r from-transparent via-[#38bdf8] to-transparent opacity-80" />
 
               {dataPackets.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center text-[11px] text-slate-600 font-mono">
-                  No DATA frames · Send a frame using the Control Deck
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
+                  Wire idle · Click "Send Next Frame" on the Control Deck
                 </div>
               ) : (
                 dataPackets.map((pkt) => (
@@ -384,25 +397,36 @@ export const SimulationStage: React.FC<SimulationStageProps> = ({
             </div>
           </div>
 
-          {/* ACK lane: B → A */}
+          {/* Lower Glowing Wire: ACK Frames (B ➔ A) */}
           <div className="relative">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-              <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-semibold">
-                ACK frames · Host B <ArrowRight className="w-3 h-3 inline" /> Host A
+            <div className="flex items-center justify-between text-xs mb-1 px-1">
+              <span className="font-bold text-orange-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#ea580c]" />
+                ACK WIRE (Host B ➔ Host A)
               </span>
-              <span className="ml-auto text-[10px] font-mono text-slate-500">
-                {ackPackets.length > 0 ? `${ackPackets.length} in transit` : 'channel idle'}
+              <span className="text-[11px] font-mono text-slate-400">
+                {ackPackets.length > 0 ? (
+                  <strong className="text-orange-300">{ackPackets.length} ACK frames in flight</strong>
+                ) : (
+                  'Channel idle'
+                )}
               </span>
             </div>
+
             <div
-              className="relative h-14 rounded-xl bg-slate-900/80 border border-cyan-500/20 overflow-visible"
-              style={{ boxShadow: ackPackets.length > 0 ? '0 0 16px rgba(6,182,212,0.08)' : undefined }}
+              className="relative h-16 rounded-2xl bg-[#0d1424]/80 backdrop-blur-md border border-orange-500/30 overflow-visible transition-all"
+              style={{
+                boxShadow: ackPackets.length > 0
+                  ? '0 0 24px rgba(234, 88, 12, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+                  : 'inset 0 1px 1px rgba(255, 255, 255, 0.1)',
+              }}
             >
-              <div className="absolute inset-y-1/2 inset-x-4 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
+              {/* Glowing horizontal wire line */}
+              <div className="absolute inset-y-1/2 inset-x-4 h-0.5 bg-gradient-to-r from-transparent via-[#f97316] to-transparent opacity-80" />
+
               {ackPackets.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center text-[11px] text-slate-600 font-mono">
-                  No ACK frames · Deliver a DATA frame at Host B to emit an ACK
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">
+                  Wire idle · Deliver a DATA packet at Host B to emit an ACK
                 </div>
               ) : (
                 ackPackets.map((pkt) => (
@@ -418,38 +442,43 @@ export const SimulationStage: React.FC<SimulationStageProps> = ({
           </div>
         </div>
 
-        {/* ===== HOST B (RECEIVER) ===== */}
-        <div className="flex gap-4 items-start">
-          {/* Receiver machine box */}
-          <div className="shrink-0 flex flex-col items-center gap-2">
-            <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-emerald-950 to-slate-900 border-2 border-emerald-500/50 shadow-lg shadow-emerald-900/40 flex flex-col items-center justify-center gap-1">
-              <Inbox className="w-7 h-7 text-emerald-400" />
-              <span className="text-[9px] font-bold text-emerald-300 uppercase tracking-wider">Host B</span>
-              <span className="text-[8px] text-emerald-600 font-mono">RECEIVER</span>
+        {/* ===== RECEIVER NODE (Host B, Right) with Window & Inbox ===== */}
+        <div className="p-4 rounded-2xl bg-[#0d1424]/90 backdrop-blur-xl border border-white/10 shadow-xl flex flex-col sm:flex-row gap-5 items-center">
+          {/* Machine Terminal Box & Delivered Count */}
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-[#0a0f1d] to-emerald-500/10 border-2 border-emerald-400 shadow-lg shadow-emerald-600/30 flex flex-col items-center justify-center gap-0.5">
+              <Inbox className="w-6 h-6 text-emerald-400" />
+              <span className="text-[10px] font-black text-white uppercase tracking-wider">Host B</span>
+              <span className="text-[8px] text-emerald-400 font-mono font-bold">RECEIVER</span>
             </div>
 
-            {/* Delivered count badge */}
-            <div className="text-center">
-              <div className="text-lg font-black font-mono text-emerald-400">{deliveredPayloads.length}</div>
-              <div className="text-[9px] text-slate-500 leading-tight">delivered</div>
+            <div className="text-center px-2">
+              <div className="text-2xl font-black font-mono text-emerald-400 leading-none">
+                {deliveredPayloads.length}
+              </div>
+              <div className="text-[9px] text-slate-400 uppercase tracking-wider mt-1 font-bold">Delivered</div>
             </div>
           </div>
 
-          {/* Receiver window track */}
-          <div className="flex-1 flex flex-col gap-2 mt-2">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Receiver Window · Rn={receiverBase}
-                {protocol === 'selective-repeat' ? ` · N=${windowSize}` : ' · N=1'}
+          {/* Receiver Window Track with Expected Rn and Purple Out-of-Order Buffers */}
+          <div className="flex-1 min-w-0 w-full space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="font-bold text-emerald-300 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>
+                  Receiver Window (Rn = <strong className="text-white">{receiverBase}</strong>
+                  {protocol === 'selective-repeat' ? `, N = ${windowSize}` : ', N = 1'})
+                </span>
               </div>
               {bufferedSeqs.size > 0 && (
-                <span className="text-[10px] font-mono text-purple-300">
-                  Buffered: [{Array.from(bufferedSeqs).sort((a, b) => a - b).join(',')}]
-                </span>
+                <div className="font-mono text-xs text-[#a78bfa] font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#8b5cf6]" />
+                  <span>Buffered: [{Array.from(bufferedSeqs).sort((a, b) => a - b).join(',')}]</span>
+                </div>
               )}
             </div>
-            <div className="pt-4">
+
+            <div className="pt-3">
               <WindowTrack
                 protocol={protocol}
                 seqSpace={seqSpace}
@@ -467,17 +496,18 @@ export const SimulationStage: React.FC<SimulationStageProps> = ({
               />
             </div>
 
-            {/* Delivered inbox strip */}
+            {/* Delivered Application Inbox (Sequential verification) */}
             {deliveredPayloads.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1 max-h-12 overflow-y-auto">
-                {deliveredPayloads.map((payload, idx) => (
-                  <div
+              <div className="flex items-center gap-1.5 pt-1 overflow-x-auto scrollbar-thin">
+                <span className="text-[10px] text-slate-400 font-mono font-bold uppercase shrink-0">Inbox:</span>
+                {deliveredPayloads.slice(-6).map((payload, idx) => (
+                  <span
                     key={idx}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-[10px] font-mono shrink-0"
                   >
-                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
                     <span>{payload}</span>
-                  </div>
+                  </span>
                 ))}
               </div>
             )}

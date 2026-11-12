@@ -39,9 +39,8 @@ export const AppShell: React.FC<AppShellProps> = ({
 
   return (
     <div
-      className={`bg-slate-950 text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200 ${
-        isCanvasView ? 'h-screen overflow-hidden flex' : 'min-h-screen flex flex-col lg:flex-row'
-      }`}
+      className="min-h-screen flex flex-col lg:flex-row text-slate-100 bg-surface"
+      style={{ backgroundColor: '#0e1321' }}
     >
       {/* Persistent Navigation Sidebar */}
       <Sidebar
@@ -56,7 +55,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 min-w-0 ${isCanvasView ? 'flex flex-col overflow-hidden' : 'flex flex-col'}`}>
+      <div className="flex-1 min-w-0 flex flex-col">
         {/* Persistent Top Navigation Bar */}
         <TopBar
           currentView={currentView}
@@ -71,8 +70,8 @@ export const AppShell: React.FC<AppShellProps> = ({
         />
 
         {isCanvasView ? (
-          /* Canvas view: full-height, no padding, no footer */
-          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          /* Canvas view: full-width, padded, scrollable workbench */
+          <div className="flex-1 overflow-y-auto flex flex-col min-h-0 p-4 sm:p-6 max-w-[1600px] w-full mx-auto">
             {children}
           </div>
         ) : (
@@ -82,19 +81,30 @@ export const AppShell: React.FC<AppShellProps> = ({
               {children}
             </main>
 
-            {/* Cohesive Footer */}
-            <footer className="border-t border-slate-800/80 bg-slate-900/40 px-6 py-4 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4 mt-auto">
-              <div className="flex items-center space-x-2 text-slate-400">
-                <span>Network Flow Control Protocols Visualizer V2 &mdash; Computer Networks Educational Laboratory</span>
+            {/* Cohesive Footer matching Stitch */}
+            <footer
+              className="border-t px-6 py-4 text-xs flex flex-wrap items-center justify-between gap-4 mt-auto text-on-surface-variant"
+              style={{
+                borderColor: 'rgba(255,255,255,0.08)',
+                background: 'rgba(22,27,42,0.8)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="flex items-center space-x-2">
+                <span>FlowControl V3 • High-Precision Deterministic Network Telemetry</span>
               </div>
               <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                  <span>Visor Sync Active • 90 FPS</span>
+                </span>
                 <button
                   type="button"
                   onClick={onOpenShortcuts}
-                  className="text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
+                  className="text-on-surface hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
                 >
-                  <Keyboard className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Keyboard Shortcuts</span>
+                  <Keyboard className="w-3.5 h-3.5 text-primary" />
+                  <span>Keyboard Shortcuts (Alt+/)</span>
                 </button>
               </div>
             </footer>

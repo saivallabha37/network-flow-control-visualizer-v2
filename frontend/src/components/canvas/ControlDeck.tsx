@@ -15,6 +15,7 @@ import {
   Wifi,
   Network,
   BookOpen,
+  Sliders,
 } from 'lucide-react';
 
 export interface CanvasScenario {
@@ -22,35 +23,35 @@ export interface CanvasScenario {
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: string;
+  color: 'rose' | 'amber' | 'purple' | 'cyan';
 }
 
 const CANVAS_SCENARIOS: CanvasScenario[] = [
   {
     id: 'lost-frame',
     label: 'Lost Frame',
-    description: 'Drop next outgoing DATA frame to trigger timeout',
+    description: 'Drop next outgoing DATA frame to trigger timeout & ARQ recovery',
     icon: XCircle,
     color: 'rose',
   },
   {
     id: 'lost-ack',
     label: 'Lost ACK',
-    description: 'Drop next incoming ACK to show sender retry',
+    description: 'Drop next incoming ACK to demonstrate duplicate detection',
     icon: AlertTriangle,
     color: 'amber',
   },
   {
     id: 'out-of-order',
-    label: 'Out-of-Order',
-    description: 'Send 2 frames then drop the first — show buffering',
+    label: 'Out-of-Order Burst',
+    description: 'Send multiple frames and drop the first to demonstrate buffering',
     icon: Network,
     color: 'purple',
   },
   {
     id: 'window-full',
-    label: 'Window Full',
-    description: 'Fill window without ACKs to demonstrate backpressure',
+    label: 'M < 2N Ambiguity',
+    description: 'Saturate window to show why Half-Space Rule M >= 2N is required',
     icon: Wifi,
     color: 'cyan',
   },
@@ -113,30 +114,35 @@ export const ControlDeck: React.FC<ControlDeckProps> = ({
   onToggleCorruptNext,
   onApplyScenario,
 }) => {
-  const [scenariosExpanded, setScenariosExpanded] = useState(false);
+  const [scenariosExpanded, setScenariosExpanded] = useState(true);
 
   return (
-    <aside className="w-72 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col overflow-y-auto">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-800 bg-slate-950/60">
+    <aside className="w-[290px] shrink-0 bg-[#0d1424]/90 backdrop-blur-xl border-r border-white/10 flex flex-col h-full overflow-hidden select-none z-20 shadow-2xl">
+      {/* Workbench Header */}
+      <div className="px-4 py-3 border-b border-white/10 bg-[#0a0f1d]/60 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-          <span className="text-xs font-bold text-white uppercase tracking-widest">Control Deck</span>
+          <div className="p-1.5 rounded-lg bg-sky-500/20 border border-sky-400/30 text-sky-400">
+            <Sliders className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-white tracking-wide uppercase">Control Deck</div>
+            <div className="text-[10px] text-slate-400">Interactive Workbench</div>
+          </div>
         </div>
-        <div className="mt-1 font-mono text-[11px] text-slate-400">
-          T = <span className="text-cyan-300 font-bold">{virtualTimeMs} ms</span>
-          <span className="ml-3 text-slate-500">{remainingPayloadCount} frames queued</span>
+        <div className="text-right">
+          <span className="font-mono text-xs font-bold text-sky-400">{virtualTimeMs} ms</span>
+          <div className="text-[9px] text-slate-500 font-mono">T(virt)</div>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col gap-0 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-4">
         {/* Protocol Selector */}
-        <section className="px-4 py-3 border-b border-slate-800/60">
-          <div className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2 flex items-center gap-1.5">
-            <BookOpen className="w-3 h-3" />
-            Protocol
+        <section className="space-y-1.5">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5 px-1">
+            <BookOpen className="w-3 h-3 text-sky-400" />
+            Active Protocol
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-xl border border-white/5">
             {PROTOCOLS.map((p) => {
               const isActive = protocol === p.id;
               return (
@@ -144,167 +150,151 @@ export const ControlDeck: React.FC<ControlDeckProps> = ({
                   key={p.id}
                   type="button"
                   onClick={() => onSetProtocol(p.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                  className={`py-1.5 px-2 rounded-lg text-center transition-all cursor-pointer font-bold text-xs ${
                     isActive
-                      ? 'bg-indigo-600/20 border-indigo-500/60 text-white ring-1 ring-indigo-500/40'
-                      : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-slate-600 hover:text-slate-200'
+                      ? 'bg-sky-500 text-white shadow-md shadow-sky-500/40 ring-1 ring-sky-300'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  <span>{p.label}</span>
-                  <span
-                    className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                      isActive ? 'bg-indigo-600/40 text-indigo-200' : 'bg-slate-800 text-slate-500'
-                    }`}
-                  >
-                    {p.short}
-                  </span>
+                  {p.short}
                 </button>
               );
             })}
           </div>
         </section>
 
-        {/* Primary Actions */}
-        <section className="px-4 py-3 border-b border-slate-800/60">
-          <div className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2 flex items-center gap-1.5">
-            <Zap className="w-3 h-3" />
-            Actions
+        {/* Primary Action Buttons */}
+        <section className="space-y-2">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5 px-1">
+            <Zap className="w-3 h-3 text-amber-400" />
+            Frame Operations
           </div>
           <div className="flex flex-col gap-2">
-            {/* Send Next Frame */}
+            {/* Primary: Send Next Frame */}
             <button
               type="button"
               onClick={onSendNextFrame}
               disabled={!canSend}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer shadow-md ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-lg ${
                 canSend
-                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/60 active:scale-95'
-                  : 'bg-slate-800/60 text-slate-600 border border-slate-800 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-[#0284c7] to-[#38bdf8] text-white hover:brightness-110 active:scale-[0.98] shadow-sky-600/30 border border-sky-300/40'
+                  : 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Send className="w-3.5 h-3.5" />
+                <Send className="w-4 h-4" />
                 <span>Send Next Frame</span>
               </div>
-              <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${canSend ? 'bg-indigo-800/60 text-indigo-200' : 'bg-slate-800 text-slate-600'}`}>
+              <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                canSend ? 'bg-black/30 text-sky-100 border border-sky-300/30' : 'bg-transparent text-slate-600'
+              }`}>
                 {remainingPayloadCount} left
               </span>
             </button>
 
-            {/* Trigger Timeout */}
+            {/* Secondary: Trigger Timeout */}
             <button
               type="button"
               onClick={onTriggerTimeout}
               disabled={!canTimeout}
-              title={canTimeout ? 'Force retransmission timeout for base frame' : 'No outstanding frames'}
-              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl font-semibold text-xs transition-all border cursor-pointer ${
+              title={canTimeout ? 'Force retransmission timeout for unACKed frames' : 'No unACKed frames in flight'}
+              className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                 canTimeout
-                  ? 'bg-amber-600/15 hover:bg-amber-600/25 text-amber-200 border-amber-500/40 active:scale-95'
-                  : 'bg-slate-800/40 text-slate-600 border-slate-800 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-red-600/20 to-red-500/10 text-red-300 border-red-500/40 hover:bg-red-600/30 hover:border-red-400 active:scale-[0.98]'
+                  : 'bg-white/5 text-slate-600 border-white/5 cursor-not-allowed'
               }`}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Trigger Timeout</span>
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-3.5 h-3.5 text-red-400" />
+                <span>Trigger Timeout</span>
+              </div>
+              <span className="text-[10px] font-mono text-red-400/80">ARQ Retry</span>
             </button>
           </div>
         </section>
 
-        {/* Fault Injection */}
-        <section className="px-4 py-3 border-b border-slate-800/60">
-          <div className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2 flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3" />
-            Fault Injection
+        {/* Fault Injection Panel */}
+        <section className="space-y-2 p-3 rounded-2xl bg-black/30 border border-white/5">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold flex items-center justify-between px-0.5">
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3 text-red-400" />
+              Fault Injection
+            </span>
+            <span className="text-[9px] text-slate-500 font-mono">Next packet</span>
           </div>
-          <div className="flex flex-col gap-2">
-            {/* Drop Next Frame toggle */}
+
+          <div className="space-y-1.5">
+            {/* Drop Next DATA */}
             <button
               type="button"
               onClick={onToggleDropNextFrame}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 dropNextFrame
-                  ? 'bg-rose-600/20 border-rose-500/60 text-rose-200 ring-1 ring-rose-500/30'
-                  : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-slate-600'
+                  ? 'bg-red-500/20 border-red-500 text-red-200 ring-1 ring-red-500/40 shadow-sm'
+                  : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10 hover:border-white/10'
               }`}
             >
               <div className="flex items-center gap-2">
-                <XCircle className={`w-3.5 h-3.5 ${dropNextFrame ? 'text-rose-400' : 'text-slate-500'}`} />
+                <XCircle className={`w-3.5 h-3.5 ${dropNextFrame ? 'text-red-400' : 'text-slate-400'}`} />
                 <span>Drop Next DATA</span>
               </div>
-              <div
-                className={`w-8 h-4 rounded-full border transition-all relative ${
-                  dropNextFrame ? 'bg-rose-600 border-rose-500' : 'bg-slate-800 border-slate-700'
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all ${
-                    dropNextFrame ? 'left-4' : 'left-0.5'
-                  }`}
-                />
-              </div>
+              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
+                dropNextFrame ? 'bg-red-500 text-white' : 'bg-white/10 text-slate-400'
+              }`}>
+                {dropNextFrame ? 'ARMED' : 'OFF'}
+              </span>
             </button>
 
-            {/* Drop Next ACK toggle */}
+            {/* Drop Next ACK */}
             <button
               type="button"
               onClick={onToggleDropNextAck}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 dropNextAck
-                  ? 'bg-amber-600/20 border-amber-500/60 text-amber-200 ring-1 ring-amber-500/30'
-                  : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-slate-600'
+                  ? 'bg-orange-500/20 border-orange-500 text-orange-200 ring-1 ring-orange-500/40 shadow-sm'
+                  : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10 hover:border-white/10'
               }`}
             >
               <div className="flex items-center gap-2">
-                <XCircle className={`w-3.5 h-3.5 ${dropNextAck ? 'text-amber-400' : 'text-slate-500'}`} />
+                <XCircle className={`w-3.5 h-3.5 ${dropNextAck ? 'text-orange-400' : 'text-slate-400'}`} />
                 <span>Drop Next ACK</span>
               </div>
-              <div
-                className={`w-8 h-4 rounded-full border transition-all relative ${
-                  dropNextAck ? 'bg-amber-600 border-amber-500' : 'bg-slate-800 border-slate-700'
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all ${
-                    dropNextAck ? 'left-4' : 'left-0.5'
-                  }`}
-                />
-              </div>
+              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
+                dropNextAck ? 'bg-orange-500 text-white' : 'bg-white/10 text-slate-400'
+              }`}>
+                {dropNextAck ? 'ARMED' : 'OFF'}
+              </span>
             </button>
 
-            {/* Corrupt Next toggle */}
+            {/* Corrupt Checksum */}
             <button
               type="button"
               onClick={onToggleCorruptNext}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 corruptNext
-                  ? 'bg-purple-600/20 border-purple-500/60 text-purple-200 ring-1 ring-purple-500/30'
-                  : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-slate-600'
+                  ? 'bg-purple-500/20 border-purple-500 text-purple-200 ring-1 ring-purple-500/40 shadow-sm'
+                  : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10 hover:border-white/10'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Zap className={`w-3.5 h-3.5 ${corruptNext ? 'text-purple-400' : 'text-slate-500'}`} />
+                <Zap className={`w-3.5 h-3.5 ${corruptNext ? 'text-purple-400' : 'text-slate-400'}`} />
                 <span>Corrupt Checksum</span>
               </div>
-              <div
-                className={`w-8 h-4 rounded-full border transition-all relative ${
-                  corruptNext ? 'bg-purple-600 border-purple-500' : 'bg-slate-800 border-slate-700'
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all ${
-                    corruptNext ? 'left-4' : 'left-0.5'
-                  }`}
-                />
-              </div>
+              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
+                corruptNext ? 'bg-purple-500 text-white' : 'bg-white/10 text-slate-400'
+              }`}>
+                {corruptNext ? '1-BIT CRC' : 'OFF'}
+              </span>
             </button>
 
             {/* Channel Delay Slider */}
-            <div className="space-y-1.5 pt-1">
+            <div className="pt-2 space-y-1">
               <div className="flex items-center justify-between text-[11px]">
-                <div className="flex items-center gap-1.5 text-slate-400">
-                  <Clock className="w-3 h-3" />
-                  <span>Channel Delay</span>
-                </div>
-                <span className="font-mono text-cyan-300 font-bold">{channelDelayMs} ms</span>
+                <span className="text-slate-400 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 text-sky-400" />
+                  Channel Delay
+                </span>
+                <span className="font-mono text-sky-400 font-bold">{channelDelayMs} ms</span>
               </div>
               <input
                 type="range"
@@ -313,53 +303,51 @@ export const ControlDeck: React.FC<ControlDeckProps> = ({
                 step={50}
                 value={channelDelayMs}
                 onChange={(e) => onSetChannelDelay(Number(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-cyan-500"
+                className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-sky-400"
               />
-              <div className="flex justify-between text-[10px] text-slate-600 font-mono">
-                <span>50ms</span>
-                <span>1000ms</span>
+              <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                <span>50ms (LAN)</span>
+                <span>1000ms (Satellite)</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Instructor Scenarios */}
-        <section className="px-4 py-3 border-b border-slate-800/60">
+        {/* Classroom Demo Presets */}
+        <section className="space-y-1.5">
           <button
             type="button"
             onClick={() => setScenariosExpanded((v) => !v)}
-            className="w-full flex items-center justify-between text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-0 cursor-pointer hover:text-slate-300 transition-colors"
+            className="w-full flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-bold px-1 hover:text-white transition-colors cursor-pointer"
           >
-            <div className="flex items-center gap-1.5">
-              <BookOpen className="w-3 h-3" />
-              Scenarios
-            </div>
-            <ChevronRight
-              className={`w-3 h-3 transition-transform ${scenariosExpanded ? 'rotate-90' : ''}`}
-            />
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="w-3 h-3 text-emerald-400" />
+              Classroom Presets
+            </span>
+            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${scenariosExpanded ? 'rotate-90' : ''}`} />
           </button>
 
           {scenariosExpanded && (
-            <div className="flex flex-col gap-1.5 mt-2">
+            <div className="grid grid-cols-1 gap-1.5 pt-1">
               {CANVAS_SCENARIOS.map((sc) => {
                 const Icon = sc.icon;
-                const colorMap: Record<string, string> = {
-                  rose: 'bg-rose-600/15 border-rose-500/40 text-rose-200 hover:bg-rose-600/25',
-                  amber: 'bg-amber-600/15 border-amber-500/40 text-amber-200 hover:bg-amber-600/25',
-                  purple: 'bg-purple-600/15 border-purple-500/40 text-purple-200 hover:bg-purple-600/25',
-                  cyan: 'bg-cyan-600/15 border-cyan-500/40 text-cyan-200 hover:bg-cyan-600/25',
+                const styleMap: Record<string, string> = {
+                  rose: 'border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-200',
+                  amber: 'border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-200',
+                  purple: 'border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-200',
+                  cyan: 'border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-200',
                 };
                 return (
                   <button
                     key={sc.id}
                     type="button"
                     onClick={() => onApplyScenario(sc.id)}
-                    className={`w-full flex items-start gap-2 px-3 py-2 rounded-lg border text-xs transition-all cursor-pointer text-left ${colorMap[sc.color]}`}
+                    className={`flex items-start gap-2 p-2 rounded-xl border text-left transition-all cursor-pointer ${styleMap[sc.color]}`}
                   >
                     <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                     <div>
-                      <div className="font-semibold leading-tight">{sc.label}</div>
-                      <div className="text-[10px] opacity-70 mt-0.5 leading-tight">{sc.description}</div>
+                      <div className="font-bold text-xs leading-tight">{sc.label}</div>
+                      <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{sc.description}</div>
                     </div>
                   </button>
                 );
@@ -368,79 +356,85 @@ export const ControlDeck: React.FC<ControlDeckProps> = ({
           )}
         </section>
 
-        {/* Simulation Clock Controls */}
-        <section className="px-4 py-3">
-          <div className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2 flex items-center gap-1.5">
-            <Clock className="w-3 h-3" />
-            Simulation Clock
+        {/* Playback Clock Controls */}
+        <section className="p-3 rounded-2xl bg-black/30 border border-white/5 space-y-2">
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold flex items-center justify-between px-0.5">
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3 h-3 text-emerald-400" />
+              Simulation Clock
+            </span>
+            <span className="font-mono text-emerald-400 text-[10px]">{autoPlaySpeed}ms / step</span>
           </div>
-          <div className="flex flex-col gap-2">
-            {/* Play / Pause */}
-            <div className="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                onClick={onToggleAutoPlay}
-                className={`flex flex-col items-center gap-1 py-2 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer ${
-                  isAutoPlaying
-                    ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-200'
-                    : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {isAutoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                <span>{isAutoPlaying ? 'Pause' : 'Play'}</span>
-              </button>
 
-              <button
-                type="button"
-                onClick={onStepTime}
-                disabled={isAutoPlaying}
-                className="flex flex-col items-center gap-1 py-2 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-400 hover:text-slate-200 text-[10px] font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <StepForward className="w-3.5 h-3.5" />
-                <span>Step</span>
-              </button>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={onToggleAutoPlay}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                isAutoPlaying
+                  ? 'bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-500/40 ring-1 ring-emerald-300'
+                  : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {isAutoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              <span>{isAutoPlaying ? 'Pause' : 'Play'}</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={onReset}
-                className="flex flex-col items-center gap-1 py-2 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-400 hover:text-rose-300 text-[10px] font-semibold transition-all cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Reset</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onStepTime}
+              disabled={isAutoPlaying}
+              className="flex items-center justify-center gap-1 py-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <StepForward className="w-3.5 h-3.5 text-sky-400" />
+              <span>+15ms</span>
+            </button>
 
-            {/* Speed slider */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>Auto-Play Speed</span>
-                <span className="font-mono text-emerald-300">{autoPlaySpeed}ms/tick</span>
-              </div>
-              <input
-                type="range"
-                min={50}
-                max={800}
-                step={50}
-                value={autoPlaySpeed}
-                onChange={(e) => onSetAutoPlaySpeed(Number(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-emerald-500"
-              />
-              <div className="flex justify-between text-[10px] text-slate-600 font-mono">
-                <span>Fast</span>
-                <span>Slow</span>
-              </div>
+            <button
+              type="button"
+              onClick={onReset}
+              className="flex items-center justify-center gap-1 py-2 rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:text-red-300 hover:bg-red-500/10 hover:border-red-500/30 text-xs font-bold transition-all cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <div className="pt-1">
+            <input
+              type="range"
+              min={50}
+              max={800}
+              step={50}
+              value={autoPlaySpeed}
+              onChange={(e) => onSetAutoPlaySpeed(Number(e.target.value))}
+              className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-emerald-400"
+            />
+            <div className="flex justify-between text-[9px] text-slate-500 font-mono mt-0.5">
+              <span>Fast (50ms)</span>
+              <span>Slow (800ms)</span>
             </div>
           </div>
         </section>
       </div>
 
-      {/* Footer legend */}
-      <div className="px-4 py-2 border-t border-slate-800 bg-slate-950/40">
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500 font-mono">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />ACKED</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />IN-FLIGHT</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" />READY</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-400 inline-block" />BUFFERED</span>
+      {/* Semantic Color Legend Strip */}
+      <div className="p-2.5 border-t border-white/10 bg-[#0a0f1d]/80 text-[10px] font-mono grid grid-cols-2 gap-1 text-slate-400">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#0284c7] inline-block shadow-sm shadow-sky-500/50" />
+          <span>DATA (A ➔ B)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#ea580c] inline-block shadow-sm shadow-orange-500/50" />
+          <span>ACK (B ➔ A)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block shadow-sm shadow-emerald-500/50" />
+          <span>Timer Active</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] inline-block shadow-sm shadow-purple-500/50" />
+          <span>Out-of-Order</span>
         </div>
       </div>
     </aside>

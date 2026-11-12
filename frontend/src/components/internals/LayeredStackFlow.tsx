@@ -245,17 +245,17 @@ export const LayeredStackFlow: React.FC = () => {
           <div
             className={`p-4 rounded-xl border transition-all ${
               active.senderLayer === 'DATA_LINK'
-                ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-950/50 ring-2 ring-purple-500/30'
+                ? 'bg-amber-500/25 border-amber-400 shadow-lg shadow-amber-950/50 ring-2 ring-amber-400/40 text-amber-200'
                 : 'bg-slate-950/60 border-slate-800/80 opacity-70'
             }`}
           >
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-bold text-purple-300">Data-Link Layer</span>
-              <span className="text-[10px] font-mono text-slate-400">Layer 2 (ARQ)</span>
+              <span className="font-bold text-amber-300">Data-Link Layer</span>
+              <span className="text-[10px] font-mono text-amber-400/80">Layer 2 (ARQ)</span>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Prepends Header <code className="text-purple-300">[Seq: 0]</code> + Appends CRC32{' '}
-              <code className="text-purple-300">0x{sampleFrame.checksum.toString(16).toUpperCase()}</code>
+            <p className="text-[11px] text-slate-300">
+              Prepends Header <code className="text-amber-300 font-bold">[Seq: 0]</code> + Appends CRC32{' '}
+              <code className="text-amber-300 font-bold">0x{sampleFrame.checksum.toString(16).toUpperCase()}</code>
             </p>
           </div>
 
@@ -355,15 +355,15 @@ export const LayeredStackFlow: React.FC = () => {
           <div
             className={`p-4 rounded-xl border transition-all ${
               active.receiverLayer === 'DATA_LINK'
-                ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-950/50 ring-2 ring-purple-500/30'
+                ? 'bg-amber-500/25 border-amber-400 shadow-lg shadow-amber-950/50 ring-2 ring-amber-400/40 text-amber-200'
                 : 'bg-slate-950/60 border-slate-800/80 opacity-70'
             }`}
           >
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-bold text-purple-300">Data-Link Layer</span>
-              <span className="text-[10px] font-mono text-slate-400">Layer 2 (ARQ)</span>
+              <span className="font-bold text-amber-300">Data-Link Layer</span>
+              <span className="text-[10px] font-mono text-amber-400/80">Layer 2 (ARQ)</span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-300">
               Validates CRC32 &amp; sequence number. Emits cumulative or selective ACK.
             </p>
           </div>

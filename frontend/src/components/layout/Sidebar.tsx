@@ -155,13 +155,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen z-40 bg-slate-900/95 border-r border-slate-800 flex flex-col justify-between transition-all duration-300 backdrop-blur-md ${
+        className={`fixed lg:sticky top-0 left-0 h-screen z-40 flex flex-col justify-between transition-all duration-300 ${
           isCollapsed ? 'w-16' : 'w-64'
         } ${
           isMobileOpen
             ? 'translate-x-0'
             : '-translate-x-full lg:translate-x-0'
         }`}
+        style={{
+          background: 'rgba(10,15,29,0.92)',
+          backdropFilter: 'blur(24px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+          borderRight: '1px solid rgba(255,255,255,0.09)',
+        }}
       >
         {/* Sidebar Header */}
         <div className="p-3.5 border-b border-slate-800 flex items-center justify-between">

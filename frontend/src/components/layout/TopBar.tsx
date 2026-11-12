@@ -91,7 +91,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30">
+    <header className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30" style={{ background: 'rgba(10,15,29,0.85)', backdropFilter: 'blur(24px) saturate(1.4)', WebkitBackdropFilter: 'blur(24px) saturate(1.4)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
       {/* Left: Mobile Toggle & View Title */}
       <div className="flex items-center gap-3 min-w-0">
         <button
